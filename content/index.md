@@ -1,7 +1,7 @@
 ---
 title: Yuxing Xiang
 ---
-I am currently a second-year Ph.D. candidate at the **[Computer Systems Research Group](https://github.com/pkusys)** in the **School of Computer Science at Peking University**, advised by Prof. [Xin Jin](https://xinjin.github.io/). Prior to that, I received my B.S. in Computer Science, also from Peking University.
+I am currently a second-year Ph.D. candidate at the **[Computer Systems Research Group](https://github.com/pkusys)** in the **School of Computer Science at Peking University**, advised by Prof. [Xin Jin](https://xinjin.github.io/). Prior to that, I received my B.S. in Computer Science, also from Peking University. 
 
 My research interests include system and algorithm design for generative AI (primarily LLMs), formal verification, and now their [[RLFM|potential crossover]]. I am also (understandably?) a bit of a programming language nerd.
 

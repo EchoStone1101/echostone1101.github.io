@@ -1,5 +1,5 @@
 ---
-title: Hi there 👋
+title: About Me
 ---
 I am currently a second-year Ph.D. candidate at the **[Computer Systems Research Group](https://github.com/pkusys)** in the **School of Computer Science at Peking University**, advised by Prof. [Xin Jin](https://xinjin.github.io/). Prior to that, I received my B.S. in Computer Science, also from Peking University. 
 
@@ -18,7 +18,6 @@ Outside of my academic life, I like music! I am a self-taught guitar player and 
 **[NSDI 2026](https://www.usenix.org/conference/nsdi26)** (TBA)
 
 **ServeGen: Workload Characterization and Generation of Large Language Model Serving in Production**
-
 ***Yuxing Xiang**, Xue Li, Kun Qian, Yan Zhang, Wenyuan Yu, Ennan Zhai, Xin Jin, Jingren Zhou*
 **[NSDI 2026](https://www.usenix.org/conference/nsdi26)** \[[Arxiv](https://arxiv.org/abs/2505.09999)\] (TBA)
 

@@ -7,7 +7,8 @@ My research interests include system and algorithm design for generative AI (pri
 
 Outside of my academic life, I like music! I am a self-taught guitar player and enjoy a lot of j-rock / j-pop / jazz / fusion music. 
 
-**Email**: xiangyx (at) stu (dot) pku (dot) edu (dot) cn
+\[📍\] Beijing, China
+\[📧\] xiangyx (at) stu (dot) pku (dot) edu (dot) cn
 \[[GitHub](https://github.com/EchoStone1101)\]      \[[Google Scholar](https://scholar.google.com/citations?hl=en&user=eceJy04AAAAJ)\]      \[[ORCID](https://orcid.org/0009-0001-1942-9902)\]  
 
 ---
@@ -32,12 +33,37 @@ _Naiqian Zheng*, Mengqi Liu*, **Yuxing Xiang**, Ennan Zhai, Linjian Song, Dong L
 ---
 ## Service
 
+[2025] SOSP Artifact Evaluation Committee
+
 ---
 ## Teaching
+
+[2025 Spring] TA, Operating Systems (Honor Track).
+
+[2023 Fall] TA, Introduction to Computer System.
+
+[2022 Fall] TA, Introduction to Computer System.
 
 ---
 ## Internship
 
+[2025.11 - Now] Research Intern @ Xiaomi LLM Core Team, on the [[Verge]] project
+
+[2025.06 - 2025.11] Research Intern @ Tencent Wechat Group (WXG), on prefill-decode disaggregated LLM serving systems
+
+[2024.05 - 2025.06] Research Intern @ Alibaba Cloud, on LLM serving systems
+
+[2023.02 - 2023.09] Research Intern @ Alibaba Cloud, on formal verification of DNS
+
 ---
 ## Honors and Awards
 
+[2024] Excellent Graduate (Peking University)
+
+[2023, 2022] Merit Student Pacesetter (Peking University)
+
+[2023, 2022] Huatai Science and Technology Scholarship (Peking University)
+
+[2021] Merit Student (Peking University)
+
+[2021] Shenzhen Finance Institute Scholarship (Peking University)

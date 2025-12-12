@@ -7,8 +7,8 @@ My research interests include system and algorithm design for generative AI (pri
 
 Outside of my academic life, I like music! I am a self-taught guitar player and enjoy a lot of j-rock / j-pop / jazz / fusion music. 
 
-\[📍\] Beijing, China
-\[📧\] xiangyx (at) stu (dot) pku (dot) edu (dot) cn
+📍  Beijing, China
+📧  xiangyx (at) stu (dot) pku (dot) edu (dot) cn
 \[[GitHub](https://github.com/EchoStone1101)\]      \[[Google Scholar](https://scholar.google.com/citations?hl=en&user=eceJy04AAAAJ)\]      \[[ORCID](https://orcid.org/0009-0001-1942-9902)\]  
 
 ---

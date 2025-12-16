@@ -39,11 +39,11 @@ _Naiqian Zheng*, Mengqi Liu*, **Yuxing Xiang**, Ennan Zhai, Linjian Song, Dong L
 ---
 ## Teaching
 
-[2025 Spring] TA, Operating Systems (Honor Track).
+[2025 Spring] TA, Operating Systems (Honor Track)
 
-[2023 Fall] TA, Introduction to Computer System.
+[2023 Fall] TA, Introduction to Computer System
 
-[2022 Fall] TA, Introduction to Computer System.
+[2022 Fall] TA, Introduction to Computer System
 
 ---
 ## Internship

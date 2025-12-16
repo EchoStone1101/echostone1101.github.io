@@ -1,5 +1,5 @@
 ---
-draft: false
+draft: true
 ---
 This is a post of my take on writing academic conference papers, specifically as a PhD in the field of computer science. This is not:
 
@@ -15,9 +15,9 @@ So, without further ado, and in no particular order -
 
 These advice should apply to academic writing in general, and I always check for them myself.
 
-1. Explain all your abbreviations at least once, unless it is really, *really* well-known (e.g., CPU, GPU, or AI). It's always "large language models (LLMs)" and "service-level objectives (SLOs)" in the introduction, and perhaps also in the background section.
+1. If you made up names for your approach, techniques, or any other concepts, do not use them before their definitions. Yes, your paper should be more limited than a C program, because human readers are (quite understandably) less successful compilers.
 
-2. If you made up names for your approach, techniques, or any other concepts, do not use them before their definitions. Yes, your paper should be more limited than a C program, because human readers are (quite understandably) less successful compilers.
+2. Explain all your abbreviations at least once, unless it is really, *really* well-known (e.g., CPU, GPU, or AI). It's always "large language models (LLMs)" and "service-level objectives (SLOs)" in the introduction, and perhaps also in the background section.
 
 3. "e.g.", "i.e.", and the like require a trailing comma `,` (*i.e.***,**  like this). To never mess this up, I always have them defined as macros, *e.g.***,** `\newcommand{\eg}{\emph{e.g.,}\xspace}`. 
 
@@ -37,7 +37,7 @@ TBA
 
 # Formatting 
 
-Suggestions here are less about semantics and more about crafting a good-looking PDF with LaTex. Treat these as hard, rigorous guidelines.
+Suggestions here are less about semantics and more about crafting a good-looking PDF with LaTeX. Treat these as hard, rigorous guidelines.
 
 > [!info] Local LaTeX + git v.s. Overleaf?
 > I personally edit my papers using local LaTeX on my MacBook, and collaborate with coauthors and my advisor with `git` (this is also his preferred way). I'd say it's mostly a preference, but there have been incidents when [Overleaf failed before deadlines](!https://forum.cspaper.org/topic/71/overleaf-down-as-neurips-deadline-looms-a-familiar-academic-ritual). Some of the following points are also more relevant to the `git`way.
@@ -67,9 +67,6 @@ Suggestions here are less about semantics and more about crafting a good-looking
 		* `and` in `author` actually means something. Keep it as `{Yuxing, Xiang and ...}`.
 		* `booktitle` is a major troublemaker. Keep the conference/journal name concise. Not `Proceedings of the ACM SIGOPS 31st Symposium on Operating Systems Principles (SOSP 25)`; just `ACM SOSP`. You've got the year covered in the `year` field. To keep this consistent, define and use string constants at the top of your bib file (e.g., `@String{ sosp = "ACM SOSP" }` and `booktitle = sosp`). Use `@String{ arxiv = "arXiv" }` for arXiv papers.
 	* Leave *only* three fields in an `@misc` entry: `@misc{XXX, title={YYY}, year={ZZZ}, howpublished={\url{...}}}`.
-* 
-
-
 
 
 [^1]: I just felt like recommending Charles Berthoud. He's really good at bass though.

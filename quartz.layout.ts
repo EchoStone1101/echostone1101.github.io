@@ -41,17 +41,19 @@ export const defaultContentPageLayout: PageLayout = {
         { Component: Component.ReaderMode() },
       ],
     }),
-    Component.Explorer(),
+    Component.Explorer({
+      title: "Posts", 
+    }),
   ],
   right: [
     Component.ConditionalRender({
       component: Component.BioPhoto(),
       condition: (page) => page.fileData.slug === "index",
     }),
-    Component.ConditionalRender({
-      component: Component.Graph(),
-      condition: (page) => page.fileData.slug !== "index",
-    }),
+    // Component.ConditionalRender({
+    //   component: Component.Graph(),
+    //   condition: (page) => page.fileData.slug !== "index",
+    // }),
     Component.ConditionalRender({
       component: Component.DesktopOnly(Component.TableOfContents()),
       condition: (page) => page.fileData.slug !== "index",

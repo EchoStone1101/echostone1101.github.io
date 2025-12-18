@@ -31,9 +31,41 @@ These advice should apply to academic writing in general, and I always check for
 
 8. De-slop your language. TBA
 
+9. Start of a paragraph. TBA
+
 # Section How-Tos
 
-TBA
+I lied a little when I said I won't talk about actual sections in a paper - I do have my two cents on how the sections should generally be organized. Templates, if you will. And there's nothing wrong with a bit of boilerplate - beautiful proses are nice, but it's the idea behind them that really matters in your paper. That said, the suggestions here are relatively subjective.
+
+### Introducing the Introduction
+
+The introduction section is arguably the most important part of a paper. For me, a good introduction is basically a boiled-down version of the full paper, complete with the problem description, the motivation, the proposed approach, and terse evaluation results, excluding only the elaborate, technical details. 
+
+In other words, ask yourself this: can someone get away with reading *only* your introduction, and still feel like they have a solid grasp of your work (in the case where that "someone" is an reviewer, would they understand your contribution and be tempted to accept your paper)? If you find your work to be entirely technical nitty-gritty, abstract it. Distill wisdom from it, even at the cost of distorting some details[^2], as long as you can reasonably defend your conclusions. More often than not, "oversimplification" will turn out, and you realize that your old view at the problem is actually flawed.
+
+This is why everybody talks about the introduction "storyline" - for maybe 2 out of 12 pages of your paper, you are indeed writing a "story" to excite your readers and convey a moral. And, like every good fable, it is OK to follow a stereotyped structure:
+
+* Open with one paragraph of general background that your problem lies within. I have already lost track of how many times I have written "Recent advancement in generative AI has ..." - or something along the line!
+
+* Then, cut straight to the problem. Maybe there's great GPU wastage in a certain scenario. Or there are nasty bugs hidden in that important software stack.
+
+* Naturally, the motivation of your work follows. Of course, unless you are working on something brand new, there usually are "existing solutions" that partly solve the problem you've pointed out. So often this is a two-paragraph cliche: "Prior works have explored...yet they remain limited due to...", and "We propose \[our approach\], ...". This should also be the most challenging part to write, really putting your abstraction to the test.
+
+* Next, a summary of the technical challenges and solutions. Compared to the rest of introduction, this is usually relaxing to write.
+
+* Finally, a report of your evaluation results, and a list of your claimed contributions ("In summary, we make the following contributions..."). For longer papers, some people like to include a "table of content" for each remaining section (e.g., "Section 3 describes..."), but I find that quite redundant and personally avoid it.
+
+But, alas, it is never as simple as filling-in-the-blanks even after you've got the template, because that's just half of the task. Literally not a single introduction in all my papers was written in one go, and that's a natural and necessary process. Hell, I'd even say that following such a pronounced logic structure in the introduction usually surfaces weaknesses in my idea, forcing me to improve my abstracted storyline, and sometimes making me go back to the drawing board. It's a bit like the programming experience with a strong type system, like in Rust - when the compiler rejects my code and makes me refactor, there's likely an actual flaw hidden in my implementation - or in this case, in my storyline. 
+
+**This is also where I admit that I like to write the introduction first in my paper**. I have surely seen other people do the opposite, but for me writing the introduction is just the mandatory meditation that I have to go through for me to get in touch with the rest of the paper. If the introduction is done, then everything else just falls into the place. Otherwise, I am not invested in any single word I write. 
+
+### Background, or Related? 
+
+TODO: write about what to put in background and related works
+
+### Don't Overlook the Overview
+
+TODO: write about why an overview is needed
 
 # Formatting 
 
@@ -56,7 +88,7 @@ Suggestions here are less about semantics and more about crafting a good-looking
 
 7. The caption of a Figure should go below the diagram. The caption of a Table should go above it. Add your `\caption{}` to the right places.
 
-8. `\vspace{}`[^2] is invaluable for adjusting paddings in figures, and controlling the paper layout and page limit in general. `\includegraphics[width=X \linewidth | \textwidth]` where `X` is less than 1 is also surprisingly impactful when shrinking the length of your paper.
+8. `\vspace{}`[^4] is invaluable for adjusting paddings in figures, and controlling the paper layout and page limit in general. `\includegraphics[width=X \linewidth | \textwidth]` where `X` is less than 1 is also surprisingly impactful when shrinking the length of your paper.
 
 9. The `overpic` package can come in handy when you need subfigure labels (e.g., (a), (b)) without bothering to actually break down your figure. It may also help save vertical space compared to an actual `subfigure`.
 
@@ -70,8 +102,8 @@ Suggestions here are less about semantics and more about crafting a good-looking
 
 
 [^1]: I just felt like recommending Charles Berthoud. He's really good at bass though.
-[^2]: The other day I read this very interesting [blog post](https://type.today/en/journal/spaces) explaining how the `pt`, `em`, `ex` units came about.
+[^2]: Deliberately blatant wording. However, it's not "retrofitting" effects to imaginary causes - that is violating academic integrity. Instead, I'm talking about how one interprets technical results to derive elegant and helpful take-aways.
 [^3]: This text is not a good example of this point, by the way. I enjoy writing like this when it's casual, but in technical text, always aim for concision.
-
+[^4]: The other day I read this very interesting [blog post](https://type.today/en/journal/spaces) explaining how the `pt`, `em`, `ex` units came about.
 
 

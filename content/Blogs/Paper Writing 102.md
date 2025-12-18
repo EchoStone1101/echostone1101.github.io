@@ -1,7 +1,7 @@
 ---
-draft: true
+draft: false
 ---
-This is a post of my take on writing academic conference papers, specifically as a PhD in the field of computer science. This is not:
+This is an evolving post of my take on writing academic conference papers, specifically as a PhD in the field of computer science. This is not:
 
 - Paper writing 101. I don't plan to cover the basics of LaTeX, or tell you what sections should generally be in a paper. Better sources for these exist out there.
 - Paper writing master class. I'm not a master in paper writing - even Charles Berthoud[^1] hasn't been on the master class for bass!
@@ -29,9 +29,7 @@ These advice should apply to academic writing in general, and I always check for
 
 7. The last piece of this ongoing trilogy of meta suggestions - avoid sole "This"s and "That"s ("This" is arguably more common in my experience). Note that I wrote "This usage is common..." instead of "This is common". Try your best to come up with a noun for what you are referring to. In fact, I dare you to open up your latest paper and search for `This is` - you will likely be in awe at how many you are using.
 
-8. De-slop your language. TBA
-
-9. Start of a paragraph. TBA
+8. De-slop your language. Like [AI slop](https://en.wikipedia.org/wiki/AI_slop), unnecessary adjectives, adverbs or *fancy* words do harm to your arguments, because the meaning of slop expressions is often unclear and edges towards over-claiming. For example, your system should not be "*truly* effective", it should just be "effective". What does "*truly*" mean, anyway? Is something else less effective? How do you measure effectiveness? And - you've got the point. Be concise and precise in your wording, and think twice next time before you use any big words.
 
 # Section How-Tos
 
@@ -61,11 +59,17 @@ But, alas, it is never as simple as filling-in-the-blanks even after you've got 
 
 ### Background, or Related? 
 
-TODO: write about what to put in background and related works
+Following the introduction section, it is either the "Background" or the "Related Work", corresponding to two approaches:
 
-### Don't Overlook the Overview
+* **"Related Work" first**. Commonly seen in AI-related, single-column, shorter (8-paged) papers. In this case, the preliminary of the work is usually less complex (easier to describe and understand), thus already covered in the introduction and saving the need for a dedicated background section. On the other hand, the body of existing related literature tends to be immense, and reading the paper begs the question "well, I wonder how this work differs from XXX or YYY" in every reader's mind. So it makes sense that you immediately address that question with a related work section.
 
-TODO: write about why an overview is needed
+* **"Background" first**. My personal pick for system-related, double-column, longer (12-paged) papers, where some preliminary knowledge is genuinely required (think formal verification of some system X; you'll need to explain a bit about both verification and X), or there is more to your motivation (e.g., some microbenchmarks to consolidate that you are tackling a real problem) for fully appreciating your work. It is also often natural to put in a subsection to describe (the drawbacks of) representative baselines, or elaborate on the challenges that you've set out to address. Meanwhile, the related work section is postponed to the end of the paper, where you should be discussing how your work complements existing research, instead of defending your novelty.
+
+Whichever approach you choose, don't miss out on the related work section! A good related work section should not be:
+
+* A list of mindless "honorable mentions" of studies you happen to know. The work you include here is meant to represent your understanding of the subject - a compact survey of the field, if you will - and should serve as a relatively comprehensive map for the readers to read on.
+
+* Repetitions of "XXX also did something similar" without any verdict. It is not enough to just reference related prior studies - you are expected to briefly comment on why/how you've improved stuff, or added to their results.
 
 # Formatting 
 

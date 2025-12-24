@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+ 
+# Block access to private directories
+Disallow: /private/
+Disallow: /.obsidian/
+Disallow: /templates/
+ 
+# Sitemap location
+Sitemap: https://echostone1101.github.io/sitemap
+ 
+# Crawl delay (optional - adjust as needed)
+Crawl-delay: 1

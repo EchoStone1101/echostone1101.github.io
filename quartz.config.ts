@@ -89,7 +89,9 @@ const config: QuartzConfig = {
       Plugin.Assets(),
       Plugin.Static(),
       Plugin.Favicon(),
-      Plugin.RobotsTxt(),
+      Plugin.RootFiles({
+        files: ["robots.txt", "google0babcf99006d5443.html"],
+      }),
       Plugin.NotFoundPage(),
       // Comment out CustomOgImages to speed up build time
       Plugin.CustomOgImages(),

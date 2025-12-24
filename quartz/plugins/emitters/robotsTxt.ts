@@ -3,25 +3,34 @@ import { QuartzEmitterPlugin } from "../types"
 import { write } from "./helpers"
 import { BuildCtx } from "../../util/ctx"
 import fs from "fs"
+import path from "path"
 
-export const RobotsTxt: QuartzEmitterPlugin = () => ({
-  name: "RobotsTxt",
+interface RootFilesOptions {
+  files: string[]
+}
+
+export const RootFiles: QuartzEmitterPlugin<RootFilesOptions> = (opts) => ({
+  name: "RootFiles",
   async *emit({ argv }) {
-    const robotsTxtPath = joinSegments(QUARTZ, "static", "robots.txt")
+    const files = opts?.files ?? []
     
-    // Check if robots.txt exists in static folder
-    try {
-      const content = await fs.promises.readFile(robotsTxtPath, "utf-8")
+    for (const filename of files) {
+      const sourcePath = joinSegments(QUARTZ, "static", filename)
       
-      yield write({
-        ctx: { argv } as BuildCtx,
-        slug: "robots" as FullSlug,
-        ext: ".txt",
-        content,
-      })
-    } catch (err) {
-      // Silently skip if robots.txt doesn't exist
-      console.warn(`Warning: robots.txt not found at ${robotsTxtPath}`)
+      try {
+        const content = await fs.promises.readFile(sourcePath, "utf-8")
+        const ext = path.extname(filename)
+        const basename = path.basename(filename, ext)
+        
+        yield write({
+          ctx: { argv } as BuildCtx,
+          slug: basename as FullSlug,
+          ext: (ext ? ext : "") as `.${string}` | "",
+          content,
+        })
+      } catch (err) {
+        console.warn(`Warning: ${filename} not found at ${sourcePath}`)
+      }
     }
   },
   async *partialEmit() {},

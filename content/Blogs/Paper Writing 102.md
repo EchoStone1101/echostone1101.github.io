@@ -16,7 +16,7 @@ So, without further ado, and in no particular order -
 ---
 # General Checklists
 
-These advice should apply to academic writing in general, and I always check for them myself.
+These advice should apply to academic writing in general, and I always check them for my own papers.
 
 1. If you made up names for your approach, techniques, or any other concepts, do not use them before their definitions. Yes, your paper should be more limited than a C program, because human readers are (quite understandably) less successful compilers.
 

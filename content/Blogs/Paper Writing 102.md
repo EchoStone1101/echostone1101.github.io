@@ -1,7 +1,10 @@
 ---
 draft: false
+tags:
+  - Tutorials
+  - Writing
 ---
-This is an evolving post of my take on writing academic conference papers, specifically as a PhD in the field of computer science. This is not:
+This is an evolving post of my take on writing academic conference papers, specifically from the perspective of a PhD in the field of computer science. This is not:
 
 - Paper writing 101. I don't plan to cover the basics of LaTeX, or tell you what sections should generally be in a paper. Better sources for these exist out there.
 - Paper writing master class. I'm not a master in paper writing - even Charles Berthoud[^1] hasn't been on the master class for bass!

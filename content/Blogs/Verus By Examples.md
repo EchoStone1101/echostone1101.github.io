@@ -20,8 +20,6 @@ As per the wonderful tradition of Rust projects, Verus has a decent [online book
 This post contains just that: a list of curated code snippets that I wrote as I was learning Verus. Each example should be a standalone program that compiles in Verus, covering various interesting aspects of the language. 
 
 ---
-# Ghost and Tracked States
-
 # Unspecified Constants
 
 It isn't immediately clear, after reading the Verus book, how one would create an "unspecified" value of a certain type - e.g., a term of type `u16` that represents some `a` in the range of `[0, 65535]`, without an actual concrete value. Indeed, an input parameter of a function works just like that; but how could one construct them *programmatically*?
@@ -66,8 +64,23 @@ fn main() {
 }
 ```
 
->[!info] TODO: `arbitrary()`
+>[!info] P.S.
+>Turns out that `vstd` also provides the [`arbitrary()`](https://verus-lang.github.io/verus/verusdoc/vstd/pervasive/fn.arbitrary.html) function, which produces an uninterpreted value of any type.
 
+# Ghost and Tracked States
+
+[This section](https://verus-lang.github.io/verus/guide/syntax.html) of the book shows various code snippets of the `ghost`/`tracked` syntax and the `Ghost`/`Tracked` types:
+```rust
+/// Exec code can use "let ghost" and "let tracked" to create local ghost and tracked variables. /// Exec code can extract individual ghost and tracked values from Ghost and Tracked wrappers /// with "let ...Ghost(x)..." and "let ...Tracked(x)...". 
+fn test_ghost_tuple_match(t: (Tracked<S>, Tracked<S>, Ghost<int>, Ghost<int>)) -> Tracked<S> { 
+	let ghost g: (int, int) = (10, 20); 
+	assert(g.0 + g.1 == 30); 
+	let ghost (g1, g2) = g; assert(g1 + g2 == 30); 
+	// b1, b2: Tracked<S> and g3, g4: Ghost<int> 
+	let (Tracked(b1), Tracked(b2), Ghost(g3), Ghost(g4)) = t; 
+	Tracked(b2) 
+}
+```
 
 # Iterators and `for` loops
 

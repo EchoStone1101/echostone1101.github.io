@@ -19,8 +19,6 @@ As per the wonderful tradition of Rust projects, Verus has a decent [online book
 
 This post contains just that: a list of curated code snippets that I wrote as I was learning Verus. Each example should be a standalone program that compiles in Verus, covering various interesting aspects of the language. 
 
-TODO: folder index page; cleanup
-
 ---
 # Ghost and Tracked States
 
@@ -68,6 +66,9 @@ fn main() {
 }
 ```
 
+>[!info] TODO: `arbitrary()`
+
+
 # Iterators and `for` loops
 
 The usage of `for` loops in Verus is documented in this [subsection](https://verus-lang.github.io/verus/guide/for.html) of the book, with a brief mention of the `iter` syntax:
@@ -84,6 +85,8 @@ In practice, I find the `iter` syntax to be much more convenient than an index-b
 ```rust
 // TODO
 ```
+
+# Proof By Contradiction
 
 
 # Getting Mathematical

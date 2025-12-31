@@ -1,5 +1,5 @@
 ---
-draft: true
+draft: false
 tags:
   - Verus
   - Formal-Stuff
@@ -64,14 +64,14 @@ fn main() {
 }
 ```
 
->[!info] P.S.
+>[!hint] P.S.
 >Turns out that `vstd` also provides the [`arbitrary()`](https://verus-lang.github.io/verus/verusdoc/vstd/pervasive/fn.arbitrary.html) function, which produces an uninterpreted value of any type.
 
 # `ghost` and `tracked`
 
 The concept of [function modes](https://verus-lang.github.io/verus/guide/modes.html) (i.e., `spec`, `proof`, and `exec`) in Verus is rather straightforward to understand. Basically, `spec` and `proof` are for "ghost" code that gets erased during compilation, and `exec` is for your normal executable Rust code. Further, the distinction between `spec` and `proof` is clear if you realize Verus proofs are just instructions to an underlying SMT solver - both modes represent pure mathematical functions, while only the `proof` mode is allowed to have "side effects" on the SMT solver states, like introducing an axiom by calling a lemma.
 
-This is not the case for [variable modes](https://verus-lang.github.io/verus/guide/reference-var-modes.html#cheat-sheet) (i.e., `ghost` and `tracked`; also, the `Ghost` and `Tracked` types), which are mentioned [here](https://verus-lang.github.io/verus/guide/syntax.html), [here](https://verus-lang.github.io/verus/state_machines/intro.html), and [here](https://www.andrew.cmu.edu/user/bparno/papers/hance_thesis.pdf), but are never given an upfront and complete explanation (the book has referred to `tracked` as "an advanced feature"; indeed, that last link I provided is a Ph.D. thesis!). Worse is the fact that the naming of the `ghost` mode also collides with the more familiar term "ghost" code - yet they mean different things! 
+Things are not quite so clear for [variable modes](https://verus-lang.github.io/verus/guide/reference-var-modes.html#cheat-sheet) (i.e., `ghost` and `tracked`; also, the `Ghost` and `Tracked` types), which are mentioned [here](https://verus-lang.github.io/verus/guide/syntax.html), [here](https://verus-lang.github.io/verus/state_machines/intro.html), and [here](https://www.andrew.cmu.edu/user/bparno/papers/hance_thesis.pdf), but are never given an upfront and complete explanation (the book has referred to `tracked` as "an advanced feature"; indeed, that last link I provided is a Ph.D. thesis!). Worse is the fact that the naming of the `ghost` mode also collides with the more familiar term "ghost" code - yet they mean different things! 
 
 Here is my best attempt at a full description of these concepts:
 
@@ -85,20 +85,32 @@ To see this in action:
 // Does *not* implement `Copy` (nor `Clone`)
 struct Witness();
 
-proof fn test_tracked(tracked w: Witness) -> (Witness, Witness) {
-	(w, w)
+proof fn consume(tracked w: Witness) {}
+
+proof fn test_tracked(tracked w: Witness) {
+    consume(w);
+    consume(w);
 }
 ```
 Running this through Verus will produce:
 ```txt
 error[E0382]: use of moved value: `w`
+  --> test.rs:10:13
+   |
+ 8 | proof fn test_tracked(tracked w: Witness) {
+   |                               - move occurs because `w` has type `Witness`,
+   |                                 which does not implement the `Copy` trait
+ 9 |     consume(w);
+   |             - value moved here
+10 |     consume(w);
+   |             ^ value used here after move
 ```
 
-In short, making a variable `tracked` in `proof`-mode code brings back Rust's classical ownership rules. Otherwise, in the example above, `w` will be `ghost` by default, and it is then OK to duplicate `w` at well.
+In short, making a variable `tracked` in `proof`-mode code brings back Rust's classical ownership rules. Otherwise, in the example above, `w` will be `ghost` by default, and it is then OK to reuse `w` at will.
 
 By the way, `tracked` is only allowed in `proof`- or `exec`-mode code, whereas in `spec`-mode all variables are always (implicitly) `ghost`. See [this table](https://verus-lang.github.io/verus/guide/reference-var-modes.html?highlight=tracked#variable-modes-and-function-modes) from the book.
 
->[!info] Maintaining linearity
+>[!info] Maintaining Linearity
 >Verus allows you to use a `tracked` variable wherever a `ghost` one is required, but forbids the other way around:
 >```rust
 >struct Witness();
@@ -118,7 +130,150 @@ By the way, `tracked` is only allowed in `proof`- or `exec`-mode code, whereas i
 
 ### `Ghost` and `Tracked` types
 
-OK, but what about
+However, `ghost` and `tracked` alone do not solve lifetime-checking in all scenarios. One such case is `exec` functions - [all arguments and return values need to have the `exec` mode](https://verus-lang.github.io/verus/guide/reference-exec-signature.html#function-arguments) in an `exec` function. Meanwhile, we often do need to pass around "ghost" states across `exec` functions to facilitate proofs of our implementation. 
+
+For example, something along the lines of:
+```rust
+use vstd::prelude::*;
+use std::ptr;
+
+verus! {
+
+struct Witness();
+proof fn authorize() -> tracked Witness { Witness() }
+proof fn consume(tracked w: Witness) {}
+
+#[verifier::external_body]
+unsafe fn ptr_read<T>(t: *const T) -> T {
+    ptr::read(t)
+}
+
+fn witnessed_read<T>(tracked w: Witness, t: *const T) -> T {
+    proof { consume(w); }
+    unsafe { ptr_read(t) }
+}
+
+fn test(ptr: *const u8) -> u8 {
+    let tracked w = authorize();
+    witnessed_read(w, ptr)
+}
+
+}
+
+fn main() {}
+```
+
+But running the example above through Verus gives you:
+```txt
+error: cannot access proof-mode place in executable context
+  --> test.rs:22:20
+   |
+22 |     witnessed_read(w, ptr)
+   |                    ^
+```
+
+Why is that? Well, that `tracked w: Witness` parameter in `witnessed_read` (Verus indeed accepts this syntax) is not actually interpreted as "treat `w` as a `tracked`-mode variable"; `w` is always `exec`-mode. If anything, `tracked` is redundant here because `exec`-mode variables are always lifetime-checked by `rustc`. Consequently, the proof object is not properly isolated in "ghost" code as we want it.
+
+To handle this properly, Verus provides the corresponding [`Ghost`](https://verus-lang.github.io/verus/verusdoc/vstd/prelude/struct.Ghost.html) and [`Tracked`](https://verus-lang.github.io/verus/verusdoc/vstd/prelude/struct.Tracked.html) structs in `vstd`. To reiterate - these are `exec`-mode, ordinary Rust structs, with their properties reflected by trait implementations (e.g., [`Ghost<A>` is always `Copy`](https://verus-lang.github.io/verus/verusdoc/vstd/prelude/struct.Ghost.html#impl-Copy-for-Ghost%3CA%3E), whereas [`Tracked<A>` is `Copy` only when `A` is `Copy`](https://verus-lang.github.io/verus/verusdoc/vstd/prelude/struct.Tracked.html#impl-Copy-for-Tracked%3CA%3E)). You simply use them in place of `ghost` and `tracked` in `exec` functions:
+```rust
+use vstd::prelude::*;
+use std::ptr;
+
+verus! {
+
+struct Witness();
+proof fn authorize() -> tracked Witness { Witness() }
+proof fn consume(tracked w: Witness) {}
+
+#[verifier::external_body]
+unsafe fn ptr_read<T>(t: *const T) -> T {
+    ptr::read(t)
+}
+
+fn witnessed_read<T>(w: Tracked<Witness>, t: *const T) -> T {
+    proof { consume(w.get()); }
+    unsafe { ptr_read(t) }
+}
+
+fn test(ptr: *const u8) -> u8 {
+    let tracked w = authorize();
+    witnessed_read(Tracked(w), ptr)
+}
+
+}
+
+fn main() {}
+```
+which now passes verification.
+
+Another common use case of `Ghost` and `Tracked` is specifying different modes in an returned tuple:
+```rust
+proof fn some_call() -> (tracked ret: (Tracked<X>, Ghost<Y>)) { ... }
+```
+Note that `tracked ret: (X, Y)` is fully `tracked` otherwise, and `ret: (tracked X, ghost Y)` is not valid syntax. You may also pattern-match with `Ghost` and `Tracked`:
+```rust
+proof fn example() {
+    // The lower-case `tracked` keyword is used to indicate the right-hand side
+    // has `proof` mode, in order to allow the `tracked` call.
+    let tracked (Tracked(x), Ghost(y)) = some_call();
+    // `x` is `tracked` X, `y` is `ghost` Y
+}
+```
+
+Finally, for the purpose of "ghost" code erasure, the `Ghost` and `Tracked` types are treated as the [`PhantomData`](https://doc.rust-lang.org/std/marker/struct.PhantomData.html) type during compilation.
+
+### Variable modes in datatypes (`struct` and `enum`)
+
+The last piece of the puzzle is how variable modes are handled in datatype definitions (a.k.a., `struct` and `enum`). 
+
+We'll use `struct` here as an example. The rules are in fact consistent with what we've seen previously, so hopefully it should feel obvious now:
+* `struct` fields can be selectively marked as `ghost` or `tracked`.
+* A `ghost`/`tracked` field is considered `ghost`/`tracked` when the entire `struct` is `tracked`; for example, in a `tracked p: Pair` where `Pair` is `struct Pair { ghost fst: X, tracked snd: Y }`, `p.fst` has mode `ghost`, and `p.snd` has mode `tracked`.
+* The field modes do not otherwise matter when the `struct` is `ghost` or `exec`. In the former case, every field is just `ghost`; in the latter case, every field is `exec` (similar to how a `tracked` argument in an `exec` function is not actually "ghost" code). We can verify this with:
+```rust
+struct Witness(u32);
+
+#[verifier::external_body]
+fn print_size<T>() {
+    println!(
+        "Type {} has size {}", 
+        std::any::type_name::<T>(), 
+        std::mem::size_of::<T>()
+    );
+}
+
+struct WitnessPair {
+    tracked w1: Witness,
+    ghost w2: Witness,
+}
+
+fn main() {
+    print_size::<WitnessPair>(); 
+    // ^ prints "Type WitnessPair has size 8"
+}
+```
+* Use `Ghost` and `Tracked` types for fields that you want erased in `exec` code.
+
+That's it. Now the [cheat sheet](https://verus-lang.github.io/verus/guide/reference-var-modes.html?highlight=Tracked#cheat-sheet) in the book should make much more sense. 
+
+>[!help] `ghost` and `track` for datatypes themselves?
+>It is also possible to write the following in Verus:
+>```rust
+>ghost struct GhostStruct { ... }
+>```
+>Admittedly, I do not know what `ghost` or `tracked` does in this scenario, and I have not yet figured out any difference in a concrete example. ***Help wanted***!
+
+# Proof By Contradiction
+
+
+# Getting Mathematical
+
+## Recursive Specs
+
+## Using `assume`
+
+## Mathematical Lemmas 
+
 
 # Iterators and `for` loops
 
@@ -132,21 +287,88 @@ for idx in iter: 0..n { ... }
 ```
 which I believe boils down to the [`ForLoopGhostIterator`](https://verus-lang.github.io/verus/verusdoc/vstd/pervasive/trait.ForLoopGhostIterator.html) trait in the `vstd` documentation. For the case above, the actual iterator in action is [`RangeGhostIterator`](https://verus-lang.github.io/verus/verusdoc/vstd/std_specs/range/struct.RangeGhostIterator.html) which implements the `ForLoopGhostIterator` trait (you can in fact validate this by checking out how the [`View`](https://verus-lang.github.io/verus/verusdoc/vstd/view/trait.View.html) trait is implemented, corresponding to the `@` syntax).
 
-In practice, I find the `iter` syntax to be much more convenient than an index-based `while` loop approach, especially when I'm looping over some collections. Here is how I used it to implement a loop of handler application:
+`iter` is an alternative to the index-based `while` loop approach for writing loops in Verus, and can feel more convenient when looping over some collections. Here is how I used it to implement a loop of handler application:
 ```rust
-// TODO
+// `VFS` specs (for a virtual file system) omitted
+
+pub uninterp spec fn handler_spec(policy: Seq<char>, m: Model) -> Model;
+
+pub open spec fn apply_policies(
+	m: Model,
+	policies: Seq<String>,
+) -> (ret: Model)
+	decreases policies.len(),
+{
+	let n = policies.len();
+	if n == 0 {
+		m
+	} else {
+		handler_spec(
+			policies.last()@, 
+			apply_policies(m, policies.subrange(0, n-1))
+		)
+	}
+}
+
+pub assume_specification<T> [std::mem::take] (x: &mut T) -> (ret: T)
+where T: std::default::Default,
+	ensures
+		*old(x) =~= ret;
+
+impl FileAdapter {
+	pub fn load_policy_file(
+		&self,
+		Tracked(vfs): Tracked(VFS),
+		m: &mut Model,
+		handler: impl Fn(String, Model) -> Model,
+	)
+		requires
+			vfs_file_exists(vfs, &self.file_path),
+			vfs_file_readable(vfs, &self.file_path),
+			forall |policy: String, _m: Model|
+				call_requires(handler, (policy, _m)),
+			forall |policy: String, _m: Model, ret: Model|
+				#![auto] call_ensures(handler, (policy, _m), ret) 
+				==> ret =~= handler_spec(policy@, _m),
+		ensures
+			*m =~= apply_policies(
+				*old(m), vfs_file_content(vfs, &self.file_path)),
+{
+	let file = File::open(Tracked(vfs), &self.file_path);
+	let lines = file.read_lines(Tracked(vfs));
+	let ghost mut lines_applied = seq![];
+	
+	#[verifier::loop_isolation(false)]
+	for line in iter: lines
+	//          ^^^^
+		invariant
+			*m =~= apply_policies(*old(m), iter@),
+			lines_applied =~= iter@,
+	{
+		let _m: Model = std::mem::take(m);
+		*m = handler(line, _m);
+		proof {
+			assert(handler_spec(line@, _m) =~= *m);
+			let ghost lines_applied_post = lines@.subrange(0, iter.pos + 1int);
+			assert(
+				lines_applied_post.subrange(0, lines_applied_post.len()-1) =~= 
+				lines_applied
+			);
+			assert(
+				apply_policies(*old(m), lines_applied_post) ==
+				handler_spec(
+					lines_applied_post.last()@, 
+					apply_policies(*old(m), lines_applied)
+				)
+			);
+		lines_applied = lines_applied_post;
+		}
+	}
+
+	assert(*m =~= apply_policies(*old(m), lines_applied));
+	assert(lines_applied =~= vfs_file_content(vfs, &self.file_path));
+}
 ```
-
-# Proof By Contradiction
-
-
-# Getting Mathematical
-
-## Recursive Specs
-
-## Using `assume`
-
-## Mathematical Lemmas 
 
 # String Operations
 

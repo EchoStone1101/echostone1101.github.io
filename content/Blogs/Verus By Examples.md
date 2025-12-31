@@ -265,9 +265,56 @@ That's it. Now the [cheat sheet](https://verus-lang.github.io/verus/guide/refere
 
 # Proof By Contradiction
 
+Most people love a bit of proof by contradiction (unless you are an [intuitionist](https://math.stackexchange.com/questions/243770/can-every-proof-by-contradiction-also-be-shown-without-contradiction), in which case, well, you do you). Good news - Verus allows you to use proof by contradiction just like you're doing your math homework.
+
+Here is an exemplar proof of the [Pigeonhole Principle](https://en.wikipedia.org/wiki/Pigeonhole_principle):
+```rust
+use vstd::prelude::*;
+use vstd::set_lib::*;
+
+verus! {
+proof fn pigeonhole(s: Seq<int>, m: int)
+    requires
+        1 <= m < s.len(),
+        forall|i: int|
+            0 <= i < s.len() ==> 0 <= s[i] && s[i] < m,
+    ensures
+        exists|i: int, j: int|
+            0 <= i < j < s.len() && s[i] == s[j],
+{
+    if !exists|i: int, j: int| 0 <= i < j < s.len() && s[i] == s[j] {
+        // Lemma from contradiction
+        assert(forall|i: int, j: int| 0 <= i < j < s.len() ==> s[i] != s[j]);
+
+        // ..follow through
+        assert(s.no_duplicates());
+        let set = s.to_set();
+        s.unique_seq_to_set();
+        assert(set.len() == s.len());
+        assert(set.len() > m);
+
+        // ..meanwhile
+        assert(forall|x: int| set.contains(x) ==> 0 <= x < m);
+        assert(set.subset_of(set_int_range(0, m)));
+        lemma_int_range(0, m);
+        lemma_len_subset(set, set_int_range(0, m));
+        assert(set.len() <= m);
+
+        // Contradiction!
+        assert(false);
+    }
+}
+
+}
+
+fn main() {}
+```
 
 # Getting Mathematical
 
+Speaking of mathematics - the code above feels much more like a mathematical proof than a normal program. Indeed, Verus allows you to do some decent mathematical reasoning with the help of appropriate lemmas from `vstd` (e.g., `lemma_int_range` is from `vstd::set_lib`; it states that a set containing integers from `lo` to `hi`, or `set_int_range(lo, hi)`, has a length of `hi - lo`).
+
+Here we show a more involved mathematical example - computing [Euler's totient function](https://en.wikipedia.org/wiki/Euler%27s_totient_function).
 ## Recursive Specs
 
 ## Using `assume`

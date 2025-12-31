@@ -67,20 +67,58 @@ fn main() {
 >[!info] P.S.
 >Turns out that `vstd` also provides the [`arbitrary()`](https://verus-lang.github.io/verus/verusdoc/vstd/pervasive/fn.arbitrary.html) function, which produces an uninterpreted value of any type.
 
-# Ghost and Tracked States
+# `ghost` and `tracked`
 
-[This section](https://verus-lang.github.io/verus/guide/syntax.html) of the book shows various code snippets of the `ghost`/`tracked` syntax and the `Ghost`/`Tracked` types:
+The concept of [function modes](https://verus-lang.github.io/verus/guide/modes.html) (i.e., `spec`, `proof`, and `exec`) in Verus is rather straightforward to understand. Basically, `spec` and `proof` are for "ghost" code that gets erased during compilation, and `exec` is for your normal executable Rust code. Further, the distinction between `spec` and `proof` is clear if you realize Verus proofs are just instructions to an underlying SMT solver - both modes represent pure mathematical functions, while only the `proof` mode is allowed to have "side effects" on the SMT solver states, like introducing an axiom by calling a lemma.
+
+This is not the case for [variable modes](https://verus-lang.github.io/verus/guide/reference-var-modes.html#cheat-sheet) (i.e., `ghost` and `tracked`; also, the `Ghost` and `Tracked` types), which are mentioned [here](https://verus-lang.github.io/verus/guide/syntax.html), [here](https://verus-lang.github.io/verus/state_machines/intro.html), and [here](https://www.andrew.cmu.edu/user/bparno/papers/hance_thesis.pdf), but are never given an upfront and complete explanation (the book has referred to `tracked` as "an advanced feature"; indeed, that last link I provided is a Ph.D. thesis!). Worse is the fact that the naming of the `ghost` mode also collides with the more familiar term "ghost" code - yet they mean different things! 
+
+Here is my best attempt at a full description of these concepts:
+
+### `tracked` is an opt-in choice
+
+The one-liner answer for the difference between `ghost` and `tracked`: **`tracked` is `ghost` but lifetime-checked**; or if you have background knowledge in type theories, **`tracked` is for linear `ghost` types** (hence its usage in [concurrency verification](https://verus-lang.github.io/verus/state_machines/intro.html)).
+Every variable in a `spec` or `proof` function, including the input and return parameters, is `ghost` by default (indeed, these are "ghost" code), and you may optionally mark one as `tracked` so that Rust's lifetime checking is enabled. Eventually, both `ghost` and `tracked` variables are erased in compilation.
+
+To see this in action:
 ```rust
-/// Exec code can use "let ghost" and "let tracked" to create local ghost and tracked variables. /// Exec code can extract individual ghost and tracked values from Ghost and Tracked wrappers /// with "let ...Ghost(x)..." and "let ...Tracked(x)...". 
-fn test_ghost_tuple_match(t: (Tracked<S>, Tracked<S>, Ghost<int>, Ghost<int>)) -> Tracked<S> { 
-	let ghost g: (int, int) = (10, 20); 
-	assert(g.0 + g.1 == 30); 
-	let ghost (g1, g2) = g; assert(g1 + g2 == 30); 
-	// b1, b2: Tracked<S> and g3, g4: Ghost<int> 
-	let (Tracked(b1), Tracked(b2), Ghost(g3), Ghost(g4)) = t; 
-	Tracked(b2) 
+// Does *not* implement `Copy` (nor `Clone`)
+struct Witness();
+
+proof fn test_tracked(tracked w: Witness) -> (Witness, Witness) {
+	(w, w)
 }
 ```
+Running this through Verus will produce:
+```txt
+error[E0382]: use of moved value: `w`
+```
+
+In short, making a variable `tracked` in `proof`-mode code brings back Rust's classical ownership rules. Otherwise, in the example above, `w` will be `ghost` by default, and it is then OK to duplicate `w` at well.
+
+By the way, `tracked` is only allowed in `proof`- or `exec`-mode code, whereas in `spec`-mode all variables are always (implicitly) `ghost`. See [this table](https://verus-lang.github.io/verus/guide/reference-var-modes.html?highlight=tracked#variable-modes-and-function-modes) from the book.
+
+>[!info] Maintaining linearity
+>Verus allows you to use a `tracked` variable wherever a `ghost` one is required, but forbids the other way around:
+>```rust
+>struct Witness();
+>proof fn make() -> tracked Witness { Witness() }
+>proof fn consume(tracked w: Witness) {}
+>proof fn dup(w: Witness) -> (Witness, Witness) { (w, w) }
+>//                          ^ By the way, you cannot cheat by adding 
+>//                           `tracked` here, as `(w, w)` is only `ghost`.
+>
+>fn test_make() {
+>	let tracked w = make();
+>	let (w1, w2) = dup(w); // OK; used a `tracked` for a `ghost`
+>	consume(w1); // Not OK; used a `ghost` for a `tracked`
+>}
+>```
+>Indeed, this rule preserves linearity of `tracked` and the soundness of proofs - by using `tracked` variable as a `ghost`, you give up a privilege that is never restored, as you cannot ever make the `ghost` variable return to `tracked`. Anything you end up proving does not rely on the linearity of the `tracked` variable, because you simply cannot invoke any `proof` function that takes a `tracked`-version of that variable. 
+
+### `Ghost` and `Tracked` types
+
+OK, but what about
 
 # Iterators and `for` loops
 

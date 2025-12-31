@@ -132,7 +132,7 @@ By the way, `tracked` is only allowed in `proof`- or `exec`-mode code, whereas i
 
 However, `ghost` and `tracked` alone do not solve lifetime-checking in all scenarios. One such case is `exec` functions - [all arguments and return values need to have the `exec` mode](https://verus-lang.github.io/verus/guide/reference-exec-signature.html#function-arguments) in an `exec` function. Meanwhile, we often do need to pass around "ghost" states across `exec` functions to facilitate proofs of our implementation. 
 
-For example, something along the lines of:
+For example, you may write something along the lines of:
 ```rust
 use vstd::prelude::*;
 use std::ptr;
@@ -294,82 +294,82 @@ which I believe boils down to the [`ForLoopGhostIterator`](https://verus-lang.gi
 pub uninterp spec fn handler_spec(policy: Seq<char>, m: Model) -> Model;
 
 pub open spec fn apply_policies(
-	m: Model,
-	policies: Seq<String>,
+    m: Model,
+    policies: Seq<String>,
 ) -> (ret: Model)
-	decreases policies.len(),
+    decreases policies.len(),
 {
-	let n = policies.len();
-	if n == 0 {
-		m
-	} else {
-		handler_spec(
-			policies.last()@, 
-			apply_policies(m, policies.subrange(0, n-1))
-		)
-	}
+    let n = policies.len();
+    if n == 0 {
+        m
+    } else {
+        handler_spec(
+            policies.last()@, 
+            apply_policies(m, policies.subrange(0, n-1))
+        )
+    }
 }
 
 pub assume_specification<T> [std::mem::take] (x: &mut T) -> (ret: T)
 where T: std::default::Default,
-	ensures
-		*old(x) =~= ret;
+    ensures
+        *old(x) =~= ret;
 
 impl FileAdapter {
-	pub fn load_policy_file(
-		&self,
-		Tracked(vfs): Tracked(VFS),
-		m: &mut Model,
-		handler: impl Fn(String, Model) -> Model,
-	)
-		requires
-			vfs_file_exists(vfs, &self.file_path),
-			vfs_file_readable(vfs, &self.file_path),
-			forall |policy: String, _m: Model|
-				call_requires(handler, (policy, _m)),
-			forall |policy: String, _m: Model, ret: Model|
-				#![auto] call_ensures(handler, (policy, _m), ret) 
-				==> ret =~= handler_spec(policy@, _m),
-		ensures
-			*m =~= apply_policies(
-				*old(m), vfs_file_content(vfs, &self.file_path)),
+    pub fn load_policy_file(
+        &self,
+        Tracked(vfs): Tracked(VFS),
+        m: &mut Model,
+        handler: impl Fn(String, Model) -> Model,
+    )
+        requires
+            vfs_file_exists(vfs, &self.file_path),
+            vfs_file_readable(vfs, &self.file_path),
+            forall |policy: String, _m: Model|
+                call_requires(handler, (policy, _m)),
+            forall |policy: String, _m: Model, ret: Model|
+                #![auto] call_ensures(handler, (policy, _m), ret) 
+                ==> ret =~= handler_spec(policy@, _m),
+        ensures
+            *m =~= apply_policies(
+                *old(m), vfs_file_content(vfs, &self.file_path)),
 {
-	let file = File::open(Tracked(vfs), &self.file_path);
-	let lines = file.read_lines(Tracked(vfs));
-	let ghost mut lines_applied = seq![];
-	
-	#[verifier::loop_isolation(false)]
-	for line in iter: lines
-	//          ^^^^
-		invariant
-			*m =~= apply_policies(*old(m), iter@),
-			lines_applied =~= iter@,
-	{
-		let _m: Model = std::mem::take(m);
-		*m = handler(line, _m);
-		proof {
-			assert(handler_spec(line@, _m) =~= *m);
-			let ghost lines_applied_post = lines@.subrange(0, iter.pos + 1int);
-			assert(
-				lines_applied_post.subrange(0, lines_applied_post.len()-1) =~= 
-				lines_applied
-			);
-			assert(
-				apply_policies(*old(m), lines_applied_post) ==
-				handler_spec(
-					lines_applied_post.last()@, 
-					apply_policies(*old(m), lines_applied)
-				)
-			);
-		lines_applied = lines_applied_post;
-		}
-	}
-
-	assert(*m =~= apply_policies(*old(m), lines_applied));
-	assert(lines_applied =~= vfs_file_content(vfs, &self.file_path));
+    let file = File::open(Tracked(vfs), &self.file_path);
+    let lines = file.read_lines(Tracked(vfs));
+    let ghost mut lines_applied = seq![];
+    
+    #[verifier::loop_isolation(false)]
+    for line in iter: lines
+    //          ^^^^
+        invariant
+            *m =~= apply_policies(*old(m), iter@),
+            lines_applied =~= iter@,
+    {
+        let _m: Model = std::mem::take(m);
+        *m = handler(line, _m);
+        proof {
+            assert(handler_spec(line@, _m) =~= *m);
+            let ghost lines_applied_post = lines@.subrange(0, iter.pos + 1int);
+            assert(
+                lines_applied_post.subrange(0, lines_applied_post.len()-1) =~= 
+                lines_applied
+            );
+            assert(
+                apply_policies(*old(m), lines_applied_post) ==
+                handler_spec(
+                    lines_applied_post.last()@, 
+                    apply_policies(*old(m), lines_applied)
+                )
+            );
+        lines_applied = lines_applied_post;
+        }
+    }
+    assert(*m =~= apply_policies(*old(m), lines_applied));
+    assert(lines_applied =~= vfs_file_content(vfs, &self.file_path));
 }
 ```
 
+Also note the `call_requires` and `call_ensures` clauses for specifying [higher-order functions](https://verus-lang.github.io/verus/guide/higher-order-fns.html).
 # String Operations
 
 # Specification or Implementation

@@ -581,18 +581,12 @@ And the main idea of the proof emerges: we can show that the computation eventua
 $$
 \varphi(p_1^{\alpha_1}...p_k^{\alpha_k}) = (p_1-1)p_1^{\alpha_1-1} ... (p_k-1)p_k^{\alpha_k-1}, \text{where } p_i \text{ are primes} 
 $$
-Below is the full proof of the `totients` function which embodies the idea above. *Be prepared for quite a code dump*!
+[Click here](https://github.com/EchoStone1101/verge/blob/c7f385e0082666ca6f694b5af04bfa02006ff470/nt/totient.rs#L1521) to view the full proof of the `totients` function which embodies the idea above. I ended up establishing some non-trivial elementary number theory results (e.g., the Euclidean method and the Bézout's Identity) just to formalize this proof. In fact, the entire repo now serves as a library for basic number theory proofs in Verus!
 
 >[!tip] Using Ambient (`broadcast`) Lemmas
->You can spot proof lines like `broadcast use lemma_xxx` in various places below. The lemmas involved here are called ["ambient lemmas"](https://verus-lang.github.io/verus/guide/broadcast_proof.html?highlight=ambient#adding-ambient-facts-to-the-proof-environment-with-broadcast), specifically identified with the `broadcast` attribute in their definition (e.g., `broadcast proof fn lemma_xxx(...)`). By bringing in ambient lemmas, Verus will attempt to apply them as instructed by their triggers (terms marked with `#[trigger]` in their `requires`/`ensures` clauses, similar to those in quantifiers), without having to explicitly call them every time everywhere. Ambient lemmas can even be grouped by defining group lemmas (e.g., `broadcast group group_yyy { lemma_1, ... }`, then used with `broadcast use group_yyy;`).
+>You can spot proof lines like `broadcast use lemma_xxx` in various places throughout the proof. The lemmas involved here are called ["ambient lemmas"](https://verus-lang.github.io/verus/guide/broadcast_proof.html?highlight=ambient#adding-ambient-facts-to-the-proof-environment-with-broadcast), specifically identified with the `broadcast` attribute in their definition (e.g., `broadcast proof fn lemma_xxx(...)`). By bringing in ambient lemmas, Verus will attempt to apply them as instructed by their triggers (terms marked with `#[trigger]` in their `requires`/`ensures` clauses, similar to those in quantifiers), without having to explicitly call them every time everywhere. Ambient lemmas can even be grouped by defining group lemmas (e.g., `broadcast group group_yyy { lemma_1, ... }`, then used with `broadcast use group_yyy;`).
 >
 >However, ambient lemma application is not guaranteed to always succeed. It tends to fail when the triggers get complex, and may also cause [trigger loops](https://verus-lang.github.io/verus/guide/profiling.html). In practice, I find ambient lemmas the most useful for tedious proofs about arithmetics, such as proving `(a + b + c) * d == d * a + (b + c) * d`. Think of these like a form of [tactics](https://lean-lang.org/theorem_proving_in_lean4/Tactics/) in Lean.
-
-
-```rust
-TODO
-```
-
 
 # Iterators and `for` loops
 
@@ -689,11 +683,3 @@ impl FileAdapter {
 ```
 
 Also note the `call_requires` and `call_ensures` clauses for specifying [higher-order functions](https://verus-lang.github.io/verus/guide/higher-order-fns.html).
-# String Operations
-
-# Specification or Implementation
-
-# External States
-
-# State Machines
-

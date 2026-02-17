@@ -2,6 +2,9 @@
 draft: false
 enableToc: false
 ---
+## [Scaling long-running autonomous coding](https://cursor.com/blog/scaling-agents)
+Jan 14, 2026
+
 ## [Inside NVIDIA GPUs: Anatomy of high performance matmul kernels](https://www.aleksagordic.com/blog/matmul)
 December 29, 2025
 

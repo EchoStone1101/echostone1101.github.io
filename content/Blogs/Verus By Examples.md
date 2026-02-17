@@ -310,100 +310,12 @@ proof fn pigeonhole(s: Seq<int>, m: int)
 fn main() {}
 ```
 
->[!tip] Using macros
->The `vstd` library also provides the [`assert_by_contradiction`](https://verus-lang.github.io/verus/verusdoc/vstd/macro.assert_by_contradiction.html) macro for achieving the same goal. It is recommended to use that macro because it conveys the proof intent more clearly.
-
 # Getting Mathematical
 
 Speaking of mathematics - the code above feels much more like a mathematical proof than a normal program. Indeed, Verus allows you to do some decent mathematical reasoning with the help of appropriate lemmas from `vstd` (e.g., `lemma_int_range` is from `vstd::set_lib`; it states that a set containing integers from `lo` to `hi`, or `set_int_range(lo, hi)`, has a length of `hi - lo`).
 
-Here we show a more involved mathematical example - computing [Euler's totient function](https://en.wikipedia.org/wiki/Euler%27s_totient_function):
-```rust
-#[verifier::external_body]
-fn totients(n: usize) -> (ret: Vec<usize>) {
-    let mut phi = (0..=n).collect::<Vec<usize>>();
-    for p in 2..=n {
-        if phi[p] == p {
-            for k in (p..=n).step_by(p) {
-                phi[k] *= (p - 1);
-                phi[k] /= p;
-            }
-        }
-    }
-    phi
-}
-```
-
-The function above (modified from [this](https://github.com/thisisisa/rust-project-euler/blob/b271860a5427751c27425a6fcdf080eff91f1be2/src/bin/problem070.rs#L6)) computes `phi(i)` for every `i` in `0..=n`, where `phi` refers to the totient function. Mathematically, `phi(i)` is defined as the number of integers in `1..=i` that are co-prime with `i`; for instance, the first few values are:
-
-|   `i`    |  0  |  1  |  2  |  3  |  4  |  5  |  6  |
-| :------: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| `phi(i)` |  0  |  1  |  1  |  2  |  2  |  4  |  2  |
-At this point, mathematicians can already start to work with the definition, come up with conjectures, and prove stuff. But in a formal context, to have Verus prove anything for us, we need to clarify some more details. Particularly, we should first convince Verus that our definition is valid.
-
-## Recursive specifications
-
-A reasonable starting point for proving the implementation above would be something like this:
-```rust
-#[verifier::external_body]
-fn totients(n: usize) -> (ret: Vec<usize>)
-    requires n >= 2,
-    ensures
-        ret@.len() == n + 1,
-        forall|i: int| #![auto] 
-            0 <= i <= n ==> ret@[i] == totient(i as nat),
-{ ... }
-```
-
-But this leaves the most important question unsolved: how do we write the `spec` function for `totient(n: nat)`? 
-
-It quickly becomes clear that our definition of `phi`, once so easily stated and understood in natural language, quite literally maps into a **recursive specification**:
-```rust
-pub open spec fn coprime(a: nat, b: nat) -> bool {
-    &&& a > 0
-    &&& b > 0
-    &&& !exists|d: nat| #![trigger a % d, b % d]
-            d > 1 && a % d == 0 && b % d == 0
-}
-
-/// Count k in 0..=i that is coprime with n
-pub open spec fn count_coprimes(n: nat, i: nat) -> nat
-    decreases i,
-{
-    if i == 0 {
-        0
-    } else {
-        count_coprimes(n, (i - 1) as nat) 
-        + if coprime(n, i) { 1nat } else { 0nat }
-    }
-}
-
-/// phi(n) := num of i that are coprime with n in 0..=n
-pub open spec fn totient(n: nat) -> nat {
-    count_coprimes(n, n)
-}
-```
-
-Here, `count_coprimes` is the heavy-lifting recursive specification; it is recursive over the argument `i`, and we need to explicitly tell this to Verus (the `decreases i` clause), so that it can prove termination of the recursion and really accepts our definition.
-
->[!tip] Alternative Specification
->Indeed, because the recursive structure of `count_coprimes` is quite simple, we can also express it with `fold`:
->```rust
->pub open spec fn totient(n: nat) -> nat {
->    Seq::<nat>::new(n + 1, |i: int| i as nat)
->        .fold_left(0nat, |sum: nat, i: nat|
->            if coprime(n, i) { sum + 1nat } else { sum })
->}
->```
->But the `fold` function is recursive anyways.
-
-While we're at it, let's also add a specification for prime numbers. It will come in handy later:
-```rust
-pub open spec fn prime(p: nat) -> bool {
-    &&& p > 1
-    &&& forall|n: nat| n < p ==> coprime(p, n)
-}
-```
+Here we show a more involved mathematical example - computing [Euler's totient function](https://en.wikipedia.org/wiki/Euler%27s_totient_function).
+## Recursive Specs
 
 ## Using `assume`
 

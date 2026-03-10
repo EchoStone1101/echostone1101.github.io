@@ -319,8 +319,186 @@ Here we show a more involved mathematical example - computing [Euler's totient f
 
 ## Using `assume`
 
-## Mathematical Lemmas 
+Now that we have the formal context, we can return to *doing math*. Let's prove some propositions! First and foremost, the following seems straightforward:
+```rust
+pub proof fn totient_one()
+    ensures totient(1) == 1,
+{
+    assume(false);
+}
+```
 
+That is, we want to show that `totient(1)` is `1`. It is the first non-base case for our recursive definition of `count_coprimes`. 
+
+Note the use of `assume(false)` here. If you run Verus over the code above, the proof will in fact be accepted, despite us not really doing anything. Essentially, `assume` is an escape hatch for introducing any *assumption* without proof, which, combined with the [principle of explosion](https://en.wikipedia.org/wiki/Principle_of_explosion), allows you to prove anything. Verus even has the `--no-cheating` flag to explicitly check for this.
+
+However, when developing proofs, `assume` turns out to be a very useful tool, because it essentially helps query the Verus SMT solver: what's left for me to prove?
+
+For example, since `totient(1)` is just `count_coprimes(1, 0) + if coprime(1, 1) { 1nat } else { 0nat }` and `count_coprimes(1, 0)` is trivially `0`, one can begin the proof above by trying:
+```rust
+pub proof fn totient_one()
+    ensures totient(1) == 1,
+{
+    assert(count_coprimes(1, 0) == 0);
+    assume(coprime(1, 1));
+}
+```
+
+which passes verification. Now, we can just focus on proving `coprime(1, 1)`!
+
+## Mathematical lemmas 
+
+But how do we actually prove `coprime(1, 1)`? Well, `coprime` is defined in a way that lends itself to a [[#Proof By Contradiction|proof by contradiction]], so we'll do that first:
+```rust
+pub proof fn totient_one()
+    ensures totient(1) == 1,
+{
+    assert(count_coprimes(1, 0) == 0);
+    // Goal: prove `coprime(1, 1)` 
+    if exists|d: nat| #![trigger 1nat % d] d > 1 && 1nat % d == 0 {
+        let d = choose|d: nat| #![trigger 1nat % d] d > 1 && 1nat % d == 0;
+        assume(false);
+    }
+    assert(coprime(1, 1));
+}
+```
+
+How to arrive at a contradiction? Intuitively, having a `d` such that `1nat % d == 0` would surely mean that `d <= 1nat`, which contradicts with `d > 1`. However, asserting that `d <= 1nat` inside the `if` block does not work. Indeed, Verus is not able to prove this "basic fact" without the help of more formal axioms and (potentially lengthy) reasoning. 
+
+The good news is: you don't have to as well, because someone ([Dafny](https://verus-lang.github.io/verus/verusdoc/vstd/arithmetic/div_mod/index.html), in fact) did it already! Just like `vstd::seq_lib` and `vstd::set_lib` contain various useful **lemmas** for `Seq` and `Set`, `vstd::arithmetic::div_mod` is loaded with the "basic facts" about `/` and `%`, available in the form of "lemmas" that we can just call on demand. 
+
+For example, `div_mod::lemma_mod_is_zero` is exactly what we need here:
+```rust
+pub proof fn totient_one()
+    ensures totient(1) == 1,
+{
+    assert(count_coprimes(1, 0) == 0);
+    // Goal: prove `coprime(1, 1)`
+    if exists|d: nat| #![trigger 1nat % d] d > 1 && 1nat % d == 0 {
+        let d = choose|d: nat| #![trigger 1nat % d] d > 1 && 1nat % d == 0;
+        lemma_mod_is_zero(1, d); // if 1 % d == 0, must have 1 >= d
+        assert(false); // contradiction!
+    }
+    assert(coprime(1, 1));
+}
+```
+
+Indeed, it is also better if we write our proofs into reusable lemmas. Here is a cleaned-up version of some basic results about the `phi` function:
+```rust
+use vstd::prelude::*;
+use vstd::arithmetic::div_mod::*;
+
+verus! {
+/// --------
+/// Definitions
+/// --------
+
+pub open spec fn coprime(a: nat, b: nat) -> bool {
+    &&& a > 0
+    &&& b > 0
+    &&& !exists|d: nat| #![trigger a % d, b % d]
+        d > 1 && a % d == 0 && b % d == 0
+}
+
+pub open spec fn prime(p: nat) -> bool {
+    &&& p > 1
+    &&& forall|n: nat| n < p ==> coprime(p, n)
+}
+
+/// Count k in 0..=i that is coprime with n
+pub open spec fn count_coprimes(n: nat, i: nat) -> nat
+    decreases i,
+{
+    if i == 0 {
+        0
+    } else {
+        count_coprimes(n, (i - 1) as nat) 
+        + if coprime(n, i) { 1nat } else { 0nat }
+    }
+}
+
+/// phi(n) := num of i that are coprime with n in 0..=n
+pub open spec fn totient(n: nat) -> nat {
+    count_coprimes(n, n)
+}
+
+/// --------
+/// Lemmas
+/// --------
+
+proof fn lemma_coprime_one(n: nat)
+    requires n >= 1,
+    ensures coprime(n, 1),
+{
+    if exists|d: nat| #![trigger 1nat % d] d > 1 && 1nat % d == 0 && n % d == 0 {
+        let d = choose|d: nat| #![trigger 1nat % d] 
+            d > 1 && 1nat % d == 0 && n % d == 0;
+        lemma_mod_is_zero(1, d);
+        assert(false);
+    }
+    assert(coprime(n, 1));
+}
+
+proof fn lemma_coprime_self(n: nat)
+    requires n > 1,
+    ensures !coprime(n, n),
+{
+    assert(n > 1 && n % n == 0);
+}
+
+pub proof fn totient_one()
+    ensures totient(1) == 1,
+{
+    // Goal: prove `coprime(1, 1)`
+    lemma_coprime_one(1);
+    reveal_with_fuel(count_coprimes, 2); // clean-up with reveal
+}
+
+pub proof fn totient_prime(p: nat)
+    requires prime(p),
+    ensures totient(p) == p - 1,
+{
+    // Goal: prove `count_coprimes(p, k) == k` for `k in 0..p`
+    count_coprimes_prime(p, (p - 1) as nat);
+    lemma_coprime_self(p);
+    reveal_with_fuel(count_coprimes, 2);
+}
+
+proof fn count_coprimes_prime(p: nat, k: nat)
+    requires
+        prime(p),
+        k < p,
+    ensures count_coprimes(p, k) == k,
+    decreases k,
+{
+    if k <= 1 {
+        reveal_with_fuel(count_coprimes, 2);
+    } else {
+        count_coprimes_prime(p, (k - 1) as nat);
+        reveal_with_fuel(count_coprimes, 2);
+    }
+}
+```
+
+### Finishing the proof
+
+It's been fun playing around, but so far we haven't actually made much progress towards proving the correctness of the actual implementation, which demands an interpretation of the code logic. The good news is that upon closer inspection, the code essentially outlines a proof for us:
+
+* `phi[i]` is initialized to `i`.
+* The condition `if phi[p] == p` is meant to select all prime numbers `p` within `0..=n`.
+* The inner loop `for k in (p..=n).step_by(p)` goes through multiples of the prime `p`.
+* The update lines multiplies the current value of `phi[k]` by `(p-1)/p`.
+
+And the main idea of the proof emerges: we can show that the computation eventually reconciles with the established mathematical characterization of the `phi` function, which is based on the [Fundamental Theorem of Arithmetic](https://en.wikipedia.org/wiki/Fundamental_theorem_of_arithmetic) - or more plainly, *factorization* - where we have the following theorem:
+$$
+\varphi(p_1^{\alpha_1}...p_k^{\alpha_k}) = (p_1-1)p_1^{\alpha_1-1} ... (p_k-1)p_k^{\alpha_k-1}, \text{where } p_i \text{ are primes} 
+$$
+[Click here](https://github.com/EchoStone1101/verge/blob/c7f385e0082666ca6f694b5af04bfa02006ff470/nt/totient.rs#L1521) to view the full proof of the `totients` function which embodies the idea above. I ended up establishing some non-trivial elementary number theory results (e.g., the Euclidean method and the Bézout's Identity) just to formalize this proof. In fact, the entire repo now serves as a library for basic number theory proofs in Verus!
+
+>[!tip] Using Ambient (`broadcast`) Lemmas
+>You can spot proof lines like `broadcast use lemma_xxx` in various places throughout the proof. The lemmas involved here are called ["ambient lemmas"](https://verus-lang.github.io/verus/guide/broadcast_proof.html?highlight=ambient#adding-ambient-facts-to-the-proof-environment-with-broadcast), specifically identified with the `broadcast` attribute in their definition (e.g., `broadcast proof fn lemma_xxx(...)`). By bringing in ambient lemmas, Verus will attempt to apply them as instructed by their triggers (terms marked with `#[trigger]` in their `requires`/`ensures` clauses, similar to those in quantifiers), without having to explicitly call them every time everywhere. Ambient lemmas can even be grouped by defining group lemmas (e.g., `broadcast group group_yyy { lemma_1, ... }`, then used with `broadcast use group_yyy;`).
+>
+>However, ambient lemma application is not guaranteed to always succeed. It tends to fail when the triggers get complex, and may also cause [trigger loops](https://verus-lang.github.io/verus/guide/profiling.html). In practice, I find ambient lemmas the most useful for tedious proofs about arithmetics, such as proving `(a + b + c) * d == d * a + (b + c) * d`. Think of these like a form of [tactics](https://lean-lang.org/theorem_proving_in_lean4/Tactics/) in Lean.
 
 # Iterators and `for` loops
 
@@ -417,11 +595,3 @@ impl FileAdapter {
 ```
 
 Also note the `call_requires` and `call_ensures` clauses for specifying [higher-order functions](https://verus-lang.github.io/verus/guide/higher-order-fns.html).
-# String Operations
-
-# Specification or Implementation
-
-# External States
-
-# State Machines
-
